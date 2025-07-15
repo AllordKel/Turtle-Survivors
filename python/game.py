@@ -6,95 +6,154 @@ from random import randint, choice
 
 os.chdir(os.path.dirname(__file__))
 
+pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=512)
+pygame.init()  # launches pygame
+clock = pygame.time.Clock()
+screen = pygame.Surface((800, 400))  # game screen
+full_screen = pygame.display.set_mode((0, 0), pygame.NOFRAME)
+
+
+# event timers
+spawn_interval = 1000
+enemy_timer = pygame.USEREVENT + 1  # enemy spawn timer
+pygame.time.set_timer(enemy_timer, spawn_interval)
+
+# font
+text_font = pygame.font.SysFont(None, 30)
+
+# utilities upload
+pygame.display.set_caption("Turtle Survivors")
+
+menu_music = pygame.mixer.Sound("sound//menu.ogg")
+game_music = pygame.mixer.Sound("sound//game.ogg")
+game_music_channel = game_music.play(-1)
+game_music_channel.pause()
+
+background1 = pygame.image.load("images\\Back.png").convert_alpha()  # background image
+background1 = pygame.transform.scale(background1, (800, 400))  # scaling background image to 800x400
+
+heart1 = pygame.image.load("images\\heart.png").convert_alpha()  # health img
+heart1 = pygame.transform.scale(heart1, (heart1.get_width() // 8, heart1.get_height() // 8))
+
+leaderboard = pygame.image.load("images\\leaderboard.png").convert_alpha()  # leaderboard image
+leaderboard = pygame.transform.scale(leaderboard, (leaderboard.get_width() // 1.5, 400))  # leaderboard.get_height() // 1.5
+
+enter_name_box = pygame.image.load("images\\enter_name.png").convert_alpha()  # enter name box image
+enter_name_box = pygame.transform.scale(enter_name_box, (enter_name_box.get_width() // 1.5, enter_name_box.get_height() // 1.5))  # leaderboard.get_height() // 1.5
+
+healthbar_text_surface = text_font.render("Health: ", False, "purple")  # healthbar text surface
+exit_text_helper = text_font.render("Press Enter to continue", False, "black")
+
+turtle1 = pygame.image.load("images\\turtle1.png").convert_alpha()
+turtle1 = pygame.transform.scale(turtle1, (turtle1.get_width() // 7, turtle1.get_height() // 7))
+turtle2 = pygame.image.load("images\\turtle2.png").convert_alpha()
+turtle2 = pygame.transform.scale(turtle2, (turtle2.get_width() // 7, turtle2.get_height() // 7))
+turtle3 = pygame.image.load("images\\turtle3.png").convert_alpha()
+turtle3 = pygame.transform.scale(turtle3, (turtle3.get_width() // 7, turtle3.get_height() // 7))
+turtle4 = pygame.image.load("images\\turtle4.png").convert_alpha()
+turtle4 = pygame.transform.scale(turtle4, (turtle4.get_width() // 7, turtle4.get_height() // 7))
+turtle_hide1 = pygame.image.load("images\\turtle_hide1.png").convert_alpha()
+turtle_hide1 = pygame.transform.scale(turtle_hide1, (turtle_hide1.get_width() // 8, turtle_hide1.get_height() // 8))
+turtle_hide2 = pygame.image.load("images\\turtle_hide2.png").convert_alpha()
+turtle_hide2 = pygame.transform.scale(turtle_hide2, (turtle_hide2.get_width() // 8, turtle_hide2.get_height() // 8))
+turtle_hide3 = pygame.image.load("images\\turtle_hide3.png").convert_alpha()
+turtle_hide3 = pygame.transform.scale(turtle_hide3, (turtle_hide3.get_width() // 8, turtle_hide3.get_height() // 8))
+green_turtle_animation_set = (turtle1, turtle2, turtle3, turtle4)
+green_turtle_hide_animation_set = (turtle_hide1, turtle_hide2, turtle_hide3, turtle_hide2)
+
+golden_turtle1 = pygame.image.load("images\\golden_turtle1.png").convert_alpha()
+golden_turtle1 = pygame.transform.scale(golden_turtle1, (golden_turtle1.get_width() // 3, golden_turtle1.get_height() // 3))
+golden_turtle2 = pygame.image.load("images\\golden_turtle2.png").convert_alpha()
+golden_turtle2 = pygame.transform.scale(golden_turtle2, (golden_turtle2.get_width() // 3, golden_turtle2.get_height() // 3))
+golden_turtle3 = pygame.image.load("images\\golden_turtle3.png").convert_alpha()
+golden_turtle3 = pygame.transform.scale(golden_turtle3, (golden_turtle3.get_width() // 3, golden_turtle3.get_height() // 3))
+golden_turtle4 = pygame.image.load("images\\golden_turtle4.png").convert_alpha()
+golden_turtle4 = pygame.transform.scale(golden_turtle4, (golden_turtle4.get_width() // 3, golden_turtle4.get_height() // 3))
+golden_turtle_hide1 = pygame.image.load("images\\golden_turtle_hide1.png").convert_alpha()
+golden_turtle_hide1 = pygame.transform.scale(golden_turtle_hide1, (golden_turtle_hide1.get_width() * 3.4, golden_turtle_hide1.get_height() * 3.4))
+golden_turtle_hide2 = pygame.image.load("images\\golden_turtle_hide2.png").convert_alpha()
+golden_turtle_hide2 = pygame.transform.scale(golden_turtle_hide2, (golden_turtle_hide2.get_width() * 3.4, golden_turtle_hide2.get_height() * 3.4))
+golden_turtle_hide3 = pygame.image.load("images\\golden_turtle_hide3.png").convert_alpha()
+golden_turtle_hide3 = pygame.transform.scale(golden_turtle_hide3, (golden_turtle_hide3.get_width() * 3.4, golden_turtle_hide3.get_height() * 3.4))
+golden_turtle_animation_set = (golden_turtle1, golden_turtle2, golden_turtle3, golden_turtle4)
+golden_turtle_hide_animation_set = (golden_turtle_hide1, golden_turtle_hide2, golden_turtle_hide3, golden_turtle_hide2)
+
+carrier_turtle1 = pygame.image.load("images\\carrier_turtle1.png").convert_alpha()
+carrier_turtle1 = pygame.transform.scale(carrier_turtle1, (carrier_turtle1.get_width() * 3.8, carrier_turtle1.get_height() * 3.8))
+carrier_turtle2 = pygame.image.load("images\\carrier_turtle2.png").convert_alpha()
+carrier_turtle2 = pygame.transform.scale(carrier_turtle2, (carrier_turtle2.get_width() * 3.8, carrier_turtle2.get_height() * 3.8))
+carrier_turtle3 = pygame.image.load("images\\carrier_turtle3.png").convert_alpha()
+carrier_turtle3 = pygame.transform.scale(carrier_turtle3, (carrier_turtle3.get_width() * 3.8, carrier_turtle3.get_height() * 3.8))
+carrier_turtle4 = pygame.image.load("images\\carrier_turtle4.png").convert_alpha()
+carrier_turtle4 = pygame.transform.scale(carrier_turtle4, (carrier_turtle4.get_width() * 3.8, carrier_turtle4.get_height() * 3.8))
+carrier_turtle_hide1 = pygame.image.load("images\\carrier_turtle_hide1.png").convert_alpha()
+carrier_turtle_hide1 = pygame.transform.scale(carrier_turtle_hide1, (carrier_turtle_hide1.get_width() * 3.4, carrier_turtle_hide1.get_height() * 3.4))
+carrier_turtle_hide2 = pygame.image.load("images\\carrier_turtle_hide2.png").convert_alpha()
+carrier_turtle_hide2 = pygame.transform.scale(carrier_turtle_hide2, (carrier_turtle_hide2.get_width() * 3.4, carrier_turtle_hide2.get_height() * 3.4))
+carrier_turtle_hide3 = pygame.image.load("images\\carrier_turtle_hide3.png").convert_alpha()
+carrier_turtle_hide3 = pygame.transform.scale(carrier_turtle_hide3, (carrier_turtle_hide3.get_width() * 3.4, carrier_turtle_hide3.get_height() * 3.4))
+carrier_turtle_animation_set = (carrier_turtle1, carrier_turtle2, carrier_turtle3, carrier_turtle4)
+carrier_turtle_hide_animation_set = (carrier_turtle_hide1, carrier_turtle_hide2, carrier_turtle_hide3, carrier_turtle_hide2)
+
+girl_turtle1 = pygame.image.load("images\\girl_turtle1.png").convert_alpha()
+girl_turtle1 = pygame.transform.scale(girl_turtle1, (girl_turtle1.get_width() * 3, girl_turtle1.get_height() * 3))
+girl_turtle2 = pygame.image.load("images\\girl_turtle2.png").convert_alpha()
+girl_turtle2 = pygame.transform.scale(girl_turtle2, (girl_turtle2.get_width() * 3, girl_turtle2.get_height() * 3))
+girl_turtle3 = pygame.image.load("images\\girl_turtle3.png").convert_alpha()
+girl_turtle3 = pygame.transform.scale(girl_turtle3, (girl_turtle3.get_width() * 3, girl_turtle3.get_height() * 3))
+girl_turtle4 = pygame.image.load("images\\girl_turtle4.png").convert_alpha()
+girl_turtle4 = pygame.transform.scale(girl_turtle4, (girl_turtle4.get_width() * 3, girl_turtle4.get_height() * 3))
+girl_turtle_hide1 = pygame.image.load("images\\girl_turtle_hide1.png").convert_alpha()
+girl_turtle_hide1 = pygame.transform.scale(girl_turtle_hide1, (girl_turtle_hide1.get_width() * 3.4, girl_turtle_hide1.get_height() * 3.4))
+girl_turtle_hide2 = pygame.image.load("images\\girl_turtle_hide2.png").convert_alpha()
+girl_turtle_hide2 = pygame.transform.scale(girl_turtle_hide2, (girl_turtle_hide2.get_width() * 3.4, girl_turtle_hide2.get_height() * 3.4))
+girl_turtle_hide3 = pygame.image.load("images\\girl_turtle_hide3.png").convert_alpha()
+girl_turtle_hide3 = pygame.transform.scale(girl_turtle_hide3, (girl_turtle_hide3.get_width() * 3.4, girl_turtle_hide3.get_height() * 3.4))
+girl_turtle_animation_set = (girl_turtle1, girl_turtle2, girl_turtle3, girl_turtle4)
+girl_turtle_hide_animation_set = (girl_turtle_hide1, girl_turtle_hide2, girl_turtle_hide3, girl_turtle_hide2)
+
+rat1 = pygame.image.load("images\\rat1.png").convert_alpha()
+rat1 = pygame.transform.scale(rat1, (rat1.get_width() // 2, rat1.get_height() // 2))
+rat2 = pygame.image.load("images\\rat2.png").convert_alpha()
+rat2 = pygame.transform.scale(rat2, (rat2.get_width() // 2, rat2.get_height() // 2))
+
+eagle1 = pygame.image.load("images\\eagle1.png").convert_alpha()
+eagle1 = pygame.transform.scale(eagle1, (eagle1.get_width() // 6, eagle1.get_height() // 6))
+eagle2 = pygame.image.load("images\\eagle2.png").convert_alpha()
+eagle2 = pygame.transform.scale(eagle2, (eagle2.get_width() // 6, eagle2.get_height() // 6))
+eagle3 = pygame.image.load("images\\eagle3.png").convert_alpha()
+eagle3 = pygame.transform.scale(eagle3, (eagle3.get_width() // 6, eagle3.get_height() // 6))
+
+endgame_box = pygame.Rect(150, 75, 500, 250)  # menu black box
+
+turtle1_skin_box = turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery - 60))
+golden_turtle1_skin_box = golden_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery - 60))
+carrier_turtle1_skin_box = carrier_turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery + 60))
+girl_turtle1_skin_box = girl_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery + 60))
+
+leaderboard_text_rect = pygame.Rect(300, 165, 200, 180)
+
 
 class turtle(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        turtle1 = pygame.image.load("images\\turtle1.png").convert_alpha()
-        self.turtle1 = pygame.transform.scale(turtle1, (turtle1.get_width() // 7, turtle1.get_height() // 7))
-        turtle2 = pygame.image.load("images\\turtle2.png").convert_alpha()
-        turtle2 = pygame.transform.scale(turtle2, (turtle2.get_width() // 7, turtle2.get_height() // 7))
-        turtle3 = pygame.image.load("images\\turtle3.png").convert_alpha()
-        turtle3 = pygame.transform.scale(turtle3, (turtle3.get_width() // 7, turtle3.get_height() // 7))
-        turtle4 = pygame.image.load("images\\turtle4.png").convert_alpha()
-        turtle4 = pygame.transform.scale(turtle4, (turtle4.get_width() // 7, turtle4.get_height() // 7))
-        turtle_hide1 = pygame.image.load("images\\turtle_hide1.png").convert_alpha()
-        turtle_hide1 = pygame.transform.scale(turtle_hide1, (turtle_hide1.get_width() // 8, turtle_hide1.get_height() // 8))
-        turtle_hide2 = pygame.image.load("images\\turtle_hide2.png").convert_alpha()
-        turtle_hide2 = pygame.transform.scale(turtle_hide2, (turtle_hide2.get_width() // 8, turtle_hide2.get_height() // 8))
-        turtle_hide3 = pygame.image.load("images\\turtle_hide3.png").convert_alpha()
-        turtle_hide3 = pygame.transform.scale(turtle_hide3, (turtle_hide3.get_width() // 8, turtle_hide3.get_height() // 8))
-        self.green_turtle_animation_set = (self.turtle1, turtle2, turtle3, turtle4)
-        self.green_turtle_hide_animation_set = (turtle_hide1, turtle_hide2, turtle_hide3, turtle_hide2)
-
-        golden_turtle1 = pygame.image.load("images\\golden_turtle1.png").convert_alpha()
-        self.golden_turtle1 = pygame.transform.scale(golden_turtle1, (golden_turtle1.get_width() // 3, golden_turtle1.get_height() // 3))
-        golden_turtle2 = pygame.image.load("images\\golden_turtle2.png").convert_alpha()
-        golden_turtle2 = pygame.transform.scale(golden_turtle2, (golden_turtle2.get_width() // 3, golden_turtle2.get_height() // 3))
-        golden_turtle3 = pygame.image.load("images\\golden_turtle3.png").convert_alpha()
-        golden_turtle3 = pygame.transform.scale(golden_turtle3, (golden_turtle3.get_width() // 3, golden_turtle3.get_height() // 3))
-        golden_turtle4 = pygame.image.load("images\\golden_turtle4.png").convert_alpha()
-        golden_turtle4 = pygame.transform.scale(golden_turtle4, (golden_turtle4.get_width() // 3, golden_turtle4.get_height() // 3))
-        golden_turtle_hide1 = pygame.image.load("images\\golden_turtle_hide1.png").convert_alpha()
-        golden_turtle_hide1 = pygame.transform.scale(golden_turtle_hide1, (golden_turtle_hide1.get_width() * 3.4, golden_turtle_hide1.get_height() * 3.4))
-        golden_turtle_hide2 = pygame.image.load("images\\golden_turtle_hide2.png").convert_alpha()
-        golden_turtle_hide2 = pygame.transform.scale(golden_turtle_hide2, (golden_turtle_hide2.get_width() * 3.4, golden_turtle_hide2.get_height() * 3.4))
-        golden_turtle_hide3 = pygame.image.load("images\\golden_turtle_hide3.png").convert_alpha()
-        golden_turtle_hide3 = pygame.transform.scale(golden_turtle_hide3, (golden_turtle_hide3.get_width() * 3.4, golden_turtle_hide3.get_height() * 3.4))
-        self.golden_turtle_animation_set = (self.golden_turtle1, golden_turtle2, golden_turtle3, golden_turtle4)
-        self.golden_turtle_hide_animation_set = (golden_turtle_hide1, golden_turtle_hide2, golden_turtle_hide3, golden_turtle_hide2)
-
-        carrier_turtle1 = pygame.image.load("images\\carrier_turtle1.png").convert_alpha()
-        self.carrier_turtle1 = pygame.transform.scale(carrier_turtle1, (carrier_turtle1.get_width() * 3.8, carrier_turtle1.get_height() * 3.8))
-        carrier_turtle2 = pygame.image.load("images\\carrier_turtle2.png").convert_alpha()
-        carrier_turtle2 = pygame.transform.scale(carrier_turtle2, (carrier_turtle2.get_width() * 3.8, carrier_turtle2.get_height() * 3.8))
-        carrier_turtle3 = pygame.image.load("images\\carrier_turtle3.png").convert_alpha()
-        carrier_turtle3 = pygame.transform.scale(carrier_turtle3, (carrier_turtle3.get_width() * 3.8, carrier_turtle3.get_height() * 3.8))
-        carrier_turtle4 = pygame.image.load("images\\carrier_turtle4.png").convert_alpha()
-        carrier_turtle4 = pygame.transform.scale(carrier_turtle4, (carrier_turtle4.get_width() * 3.8, carrier_turtle4.get_height() * 3.8))
-        carrier_turtle_hide1 = pygame.image.load("images\\carrier_turtle_hide1.png").convert_alpha()
-        carrier_turtle_hide1 = pygame.transform.scale(carrier_turtle_hide1, (carrier_turtle_hide1.get_width() * 3.4, carrier_turtle_hide1.get_height() * 3.4))
-        carrier_turtle_hide2 = pygame.image.load("images\\carrier_turtle_hide2.png").convert_alpha()
-        carrier_turtle_hide2 = pygame.transform.scale(carrier_turtle_hide2, (carrier_turtle_hide2.get_width() * 3.4, carrier_turtle_hide2.get_height() * 3.4))
-        carrier_turtle_hide3 = pygame.image.load("images\\carrier_turtle_hide3.png").convert_alpha()
-        carrier_turtle_hide3 = pygame.transform.scale(carrier_turtle_hide3, (carrier_turtle_hide3.get_width() * 3.4, carrier_turtle_hide3.get_height() * 3.4))
-        self.carrier_turtle_animation_set = (self.carrier_turtle1, carrier_turtle2, carrier_turtle3, carrier_turtle4)
-        self.carrier_turtle_hide_animation_set = (carrier_turtle_hide1, carrier_turtle_hide2, carrier_turtle_hide3, carrier_turtle_hide2)
-
-        girl_turtle1 = pygame.image.load("images\\girl_turtle1.png").convert_alpha()
-        self.girl_turtle1 = pygame.transform.scale(girl_turtle1, (girl_turtle1.get_width() * 3, girl_turtle1.get_height() * 3))
-        girl_turtle2 = pygame.image.load("images\\girl_turtle2.png").convert_alpha()
-        girl_turtle2 = pygame.transform.scale(girl_turtle2, (girl_turtle2.get_width() * 3, girl_turtle2.get_height() * 3))
-        girl_turtle3 = pygame.image.load("images\\girl_turtle3.png").convert_alpha()
-        girl_turtle3 = pygame.transform.scale(girl_turtle3, (girl_turtle3.get_width() * 3, girl_turtle3.get_height() * 3))
-        girl_turtle4 = pygame.image.load("images\\girl_turtle4.png").convert_alpha()
-        girl_turtle4 = pygame.transform.scale(girl_turtle4, (girl_turtle4.get_width() * 3, girl_turtle4.get_height() * 3))
-        girl_turtle_hide1 = pygame.image.load("images\\girl_turtle_hide1.png").convert_alpha()
-        girl_turtle_hide1 = pygame.transform.scale(girl_turtle_hide1, (girl_turtle_hide1.get_width() * 3.4, girl_turtle_hide1.get_height() * 3.4))
-        girl_turtle_hide2 = pygame.image.load("images\\girl_turtle_hide2.png").convert_alpha()
-        girl_turtle_hide2 = pygame.transform.scale(girl_turtle_hide2, (girl_turtle_hide2.get_width() * 3.4, girl_turtle_hide2.get_height() * 3.4))
-        girl_turtle_hide3 = pygame.image.load("images\\girl_turtle_hide3.png").convert_alpha()
-        girl_turtle_hide3 = pygame.transform.scale(girl_turtle_hide3, (girl_turtle_hide3.get_width() * 3.4, girl_turtle_hide3.get_height() * 3.4))
-        self.girl_turtle_animation_set = (self.girl_turtle1, girl_turtle2, girl_turtle3, girl_turtle4)
-        self.girl_turtle_hide_animation_set = (girl_turtle_hide1, girl_turtle_hide2, girl_turtle_hide3, girl_turtle_hide2)
-        
         self.selected_skin = load_selected_skin()
         if self.selected_skin == "green_turtle":
-            self.turtle_animation_set = self.green_turtle_animation_set
-            self.turtle_jump_animation_set = self.turtle1
-            self.turtle_hide_animation_set = self.green_turtle_hide_animation_set
+            self.turtle_animation_set = green_turtle_animation_set
+            self.turtle_jump_animation_set = turtle1
+            self.turtle_hide_animation_set = green_turtle_hide_animation_set
         elif self.selected_skin == "golden_turtle":
-            self.turtle_animation_set = self.golden_turtle_animation_set
-            self.turtle_jump_animation_set = self.golden_turtle1
-            self.turtle_hide_animation_set = self.golden_turtle_hide_animation_set
+            self.turtle_animation_set = golden_turtle_animation_set
+            self.turtle_jump_animation_set = golden_turtle1
+            self.turtle_hide_animation_set = golden_turtle_hide_animation_set
         elif self.selected_skin == "carrier_turtle":
-            self.turtle_animation_set = self.carrier_turtle_animation_set
-            self.turtle_jump_animation_set = self.carrier_turtle1
-            self.turtle_hide_animation_set = self.carrier_turtle_hide_animation_set
+            self.turtle_animation_set = carrier_turtle_animation_set
+            self.turtle_jump_animation_set = carrier_turtle1
+            self.turtle_hide_animation_set = carrier_turtle_hide_animation_set
         elif self.selected_skin == "girl_turtle":
-            self.turtle_animation_set = self.girl_turtle_animation_set
-            self.turtle_jump_animation_set = self.girl_turtle1
-            self.turtle_hide_animation_set = self.girl_turtle_hide_animation_set
+            self.turtle_animation_set = girl_turtle_animation_set
+            self.turtle_jump_animation_set = girl_turtle1
+            self.turtle_hide_animation_set = girl_turtle_hide_animation_set
 
         self.turtle_gravity = 0
         self.max_health = 3
@@ -102,28 +161,29 @@ class turtle(pygame.sprite.Sprite):
         self.damage_time = 0
 
         self.image = self.turtle_animation_set[int(pygame.time.get_ticks() // 100 % len(self.turtle_animation_set))]
-        self.rect = self.image.get_rect(midbottom=(80, 350))
+        self.rect = self.image.get_rect(midbottom=(80, 380))
 
     def inputs(self):
-        if (keys[pygame.K_SPACE] or keys[pygame.K_UP] or keys[pygame.K_w]) and self.rect.bottom == 350:  # turtle jumping
+        if (keys[pygame.K_SPACE] or keys[pygame.K_UP] or keys[pygame.K_w]) and self.rect.bottom == 380:  # turtle jumping
             self.turtle_gravity = -20
 
-        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and self.rect.bottom == 350:  # turtle hiding
+        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and self.rect.bottom == 380:  # turtle hiding
             self.defense_state = True
         else:
             self.defense_state = False
 
     def gravity(self):
-        self.turtle_gravity += 1
+        if self.rect.bottom != 380:
+            self.turtle_gravity += 1
         self.rect.y += self.turtle_gravity
-        if self.rect.bottom >= 350:
-            self.rect.bottom = 350
+        if self.rect.bottom >= 380:
+            self.rect.bottom = 380
 
     def animation(self):
         old_midbottom = self.rect.midbottom
         if self.defense_state:
             self.image = self.turtle_hide_animation_set[int(pygame.time.get_ticks() // 100 % len(self.turtle_hide_animation_set))]
-        elif self.rect.bottom != 350:
+        elif self.rect.bottom != 380:
             self.image = self.turtle_jump_animation_set
         else:
             self.image = self.turtle_animation_set[int(pygame.time.get_ticks() // 100 % len(self.turtle_animation_set))]
@@ -151,24 +211,13 @@ class mobs(pygame.sprite.Sprite):
     def __init__(self, enemy_type):
         super().__init__()
         if enemy_type == "rat":
-            rat1 = pygame.image.load("images\\rat1.png").convert_alpha()
-            rat1 = pygame.transform.scale(rat1, (rat1.get_width() // 2, rat1.get_height() // 2))
-            rat2 = pygame.image.load("images\\rat2.png").convert_alpha()
-            rat2 = pygame.transform.scale(rat2, (rat2.get_width() // 2, rat2.get_height() // 2))
             self.enemy_animation_set = (rat1, rat2)
-            self.height_spawn = 350
+            self.height_spawn = 380
         elif enemy_type == "eagle":
-            eagle1 = pygame.image.load("images\\eagle1.png").convert_alpha()
-            eagle1 = pygame.transform.scale(eagle1, (eagle1.get_width() // 6, eagle1.get_height() // 6))
-            eagle2 = pygame.image.load("images\\eagle2.png").convert_alpha()
-            eagle2 = pygame.transform.scale(eagle2, (eagle2.get_width() // 6, eagle2.get_height() // 6))
-            eagle3 = pygame.image.load("images\\eagle3.png").convert_alpha()
-            eagle3 = pygame.transform.scale(eagle3, (eagle3.get_width() // 6, eagle3.get_height() // 6))
             self.enemy_animation_set = (eagle1, eagle2, eagle3, eagle2)
             self.height_spawn = 150
 
         self.enemy_type = enemy_type
-        self.speeding = 1
         self.image = self.enemy_animation_set[int(pygame.time.get_ticks() // 100 % len(self.enemy_animation_set))]
         self.rect = self.image.get_rect(midbottom=(randint(950, 1050), self.height_spawn))
 
@@ -176,11 +225,9 @@ class mobs(pygame.sprite.Sprite):
         self.image = self.enemy_animation_set[int(pygame.time.get_ticks() // 100 % len(self.enemy_animation_set))]
 
     def moving(self):
-        if self.speeding < 2:
-            self.speeding = 1 + score / 100
-        self.rect.x -= 5 * self.speeding
-        if self.enemy_type == "eagle" and self.rect.x <= 200 and self.rect.bottom < player.sprite.rect.top + 1:
-            self.rect.y += 5 * self.speeding
+        self.rect.x -= 6 * speeding_rate
+        if self.enemy_type == "eagle" and self.rect.x <= 220 and self.rect.bottom < player.sprite.rect.top + 1:
+            self.rect.y += 6 * speeding_rate
         self.destruction()
 
     def destruction(self):
@@ -216,6 +263,9 @@ def new_game():  # starting new game state
     pygame.time.set_timer(enemy_timer, spawn_interval)
     global player_name
     player_name = ""
+    game_music_channel.play(game_music, loops=-1)
+    global old_score_display
+    old_score_display = -1
 
 
 def scale_mouse(pos):
@@ -254,51 +304,25 @@ def load_selected_skin():
     except FileNotFoundError:
         return "green_turtle"
 
-pygame.init()  # launches pygame
-clock = pygame.time.Clock()
-screen = pygame.Surface((800, 400))  # game screen
-full_screen = pygame.display.set_mode((0, 0), pygame.NOFRAME)
+
+def play_music():
+    if game_state == "menu" and player.sprite.health == 0:
+        game_music_channel.pause()
+        menu_music.set_volume(0.1)
+        menu_music.play(loops=-1)
+    if game_state == "game":
+        menu_music.stop()
+        game_music.set_volume(0.15)
+        game_music_channel.unpause()
+
 
 # groups
 player = pygame.sprite.GroupSingle()
 player.add(turtle())
 enemies = pygame.sprite.Group()
 
-# event timers
-spawn_interval = 1500
-enemy_timer = pygame.USEREVENT + 1  # enemy spawn timer
-pygame.time.set_timer(enemy_timer, spawn_interval)
-
-# font
-text_font = pygame.font.SysFont(None, 30)
-
-# utilities upload
-pygame.display.set_caption("Turtle Survivors")
-
-menu_music = pygame.mixer.Sound("sound//menu.ogg")
-game_music = pygame.mixer.Sound("sound//game.ogg")
-
-background1 = pygame.image.load("images\\Back.png").convert_alpha()  # background image
-background1 = pygame.transform.scale(background1, (800, 400))  # scaling background image to 800x400
-
-heart1 = pygame.image.load("images\\heart.png").convert_alpha()  # health img
-heart1 = pygame.transform.scale(heart1, (heart1.get_width() // 8, heart1.get_height() // 8))
-
-leaderboard = pygame.image.load("images\\leaderboard.png").convert_alpha()  # leaderboard image
-leaderboard = pygame.transform.scale(leaderboard, (leaderboard.get_width() // 1.5, 400))  # leaderboard.get_height() // 1.5
-
-enter_name_box = pygame.image.load("images\\enter_name.png").convert_alpha()  # enter name box image
-enter_name_box = pygame.transform.scale(enter_name_box, (enter_name_box.get_width() // 1.5, enter_name_box.get_height() // 1.5))  # leaderboard.get_height() // 1.5
-
-healthbar_text_surface = text_font.render("Health: ", False, "purple")  # healthbar text surface
-exit_text_helper = text_font.render("Press Enter to continue", False, "black")
-
-endgame_box = pygame.Rect(150, 75, 500, 250)  # menu black box
-
-leaderboard_text_rect = pygame.Rect(300, 165, 200, 180)
-
 game_state = "menu"
-# new_game()
+play_music()
 
 while True:
     events = pygame.event.get()  # saving all events
@@ -310,36 +334,42 @@ while True:
             exit()
 
     if game_state == "game":
-        # music
-        menu_music.stop()
-        game_music.set_volume(0.05)
-        game_music.play(loops=-1)
+
+        # speeding
+        if score <= 100:
+            speeding_rate = 1 + score / 100
+        else:
+            speeding_rate = 2
 
         # background animation
-        background_animation_x -= 2  # background animation speed
+        background_animation_x -= 3 * speeding_rate  # background animation speed
         if background_animation_x <= -background1.get_width():
             background_animation_x += background1.get_width()
 
-        # game events
-        for event in events:
-            if event.type == enemy_timer:  # adding enemies to the enemy list
-                enemies.add(mobs(choice(["rat", "eagle"])))
-
-        new_spawn_interval = round(1500 - 50 * (score // 5))
+        # enemies spawn interval
+        new_spawn_interval = round(1000 - 50 * (score // 10))
         if new_spawn_interval != spawn_interval and spawn_interval > 650:
             spawn_interval = new_spawn_interval
             pygame.time.set_timer(enemy_timer, spawn_interval)
 
         # buttons
-        if keys[pygame.K_ESCAPE]:  # pause
-            game_state = "menu"
+        for event in events:
+            if event.type == enemy_timer:  # adding enemies to the enemy list
+                enemies.add(mobs(choice(["rat", "eagle"])))
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:  # pause
+                    game_state = "menu"
 
         # drowing
         screen.blit(background1, (background_animation_x, 0))
         screen.blit(background1, (background1.get_width() + background_animation_x, 0))
 
-        score_text = text_font.render(f"Score: {round(score)}", False, "purple")
-        score_box = score_text.get_rect(topright=(790, 15))
+        # score
+        if round(score) != old_score_display:
+            score_text = text_font.render(f"Score: {round(score)}", False, "purple")
+            score_box = score_text.get_rect(topright=(790, 15))
+            old_score_display = round(score)
         screen.blit(score_text, score_box)
         score += 1 / 60
 
@@ -359,9 +389,7 @@ while True:
 
     elif game_state == "menu":
         # music
-        game_music.stop()
-        menu_music.set_volume(0.05)
-        menu_music.play(loops=-1)
+        play_music()
 
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -370,6 +398,7 @@ while True:
 
                 if pygame.mouse.get_pressed()[0] and newgame_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # start new game
                     new_game()
+                    play_music()
 
                 if pygame.mouse.get_pressed()[0] and menu_skins_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # skins button
                     game_state = "skin_selection"
@@ -386,7 +415,7 @@ while True:
                 if event.key == pygame.K_ESCAPE and player.sprite.health != 0:
                     game_state = "game"
 
-        try: #background
+        try:  # background
             screen.blit(background1, (background_animation_x, 0))
             screen.blit(background1, (background1.get_width() + background_animation_x, 0))
         except NameError:
@@ -467,6 +496,7 @@ while True:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
                     game_state = "menu"
+                    play_music()
 
         try:  # background
             screen.blit(background1, (background_animation_x, 0))
@@ -497,30 +527,30 @@ while True:
                 if pygame.mouse.get_pressed()[0] and turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
                     player.sprite.selected_skin = "green_turtle"
                     save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = player.sprite.green_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = player.sprite.turtle1
-                    player.sprite.turtle_hide_animation_set = player.sprite.green_turtle_hide_animation_set
+                    player.sprite.turtle_animation_set = green_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = turtle1
+                    player.sprite.turtle_hide_animation_set = green_turtle_hide_animation_set
 
                 if pygame.mouse.get_pressed()[0] and golden_turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
                     player.sprite.selected_skin = "golden_turtle"
                     save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = player.sprite.golden_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = player.sprite.golden_turtle1
-                    player.sprite.turtle_hide_animation_set = player.sprite.golden_turtle_hide_animation_set
+                    player.sprite.turtle_animation_set = golden_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = golden_turtle1
+                    player.sprite.turtle_hide_animation_set = golden_turtle_hide_animation_set
 
                 if pygame.mouse.get_pressed()[0] and carrier_turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
                     player.sprite.selected_skin = "carrier_turtle"
                     save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = player.sprite.carrier_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = player.sprite.carrier_turtle1
-                    player.sprite.turtle_hide_animation_set = player.sprite.carrier_turtle_hide_animation_set
+                    player.sprite.turtle_animation_set = carrier_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = carrier_turtle1
+                    player.sprite.turtle_hide_animation_set = carrier_turtle_hide_animation_set
 
                 if pygame.mouse.get_pressed()[0] and girl_turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
                     player.sprite.selected_skin = "girl_turtle"
                     save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = player.sprite.girl_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = player.sprite.girl_turtle1
-                    player.sprite.turtle_hide_animation_set = player.sprite.girl_turtle_hide_animation_set
+                    player.sprite.turtle_animation_set = girl_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = girl_turtle1
+                    player.sprite.turtle_hide_animation_set = girl_turtle_hide_animation_set
 
         try:
             screen.blit(background1, (background_animation_x, 0))
@@ -532,18 +562,13 @@ while True:
         pygame.draw.rect(screen, "#aaeebb", endgame_box, 2)
         screen.blit(exit_text_helper, exit_text_helper.get_rect(topright=(800, 0)))
 
-        turtle1_skin_box = player.sprite.turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery - 60))
-        golden_turtle1_skin_box = player.sprite.golden_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery - 60))
-        carrier_turtle1_skin_box = player.sprite.carrier_turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery + 60))
-        girl_turtle1_skin_box = player.sprite.girl_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery + 60))
-
-        screen.blit(player.sprite.turtle1, turtle1_skin_box)
+        screen.blit(turtle1, turtle1_skin_box)
         pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "green_turtle" else "#303030", turtle1_skin_box, 2)
-        screen.blit(player.sprite.golden_turtle1, golden_turtle1_skin_box)
+        screen.blit(golden_turtle1, golden_turtle1_skin_box)
         pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "golden_turtle" else "#303030", golden_turtle1_skin_box, 2)
-        screen.blit(player.sprite.carrier_turtle1, carrier_turtle1_skin_box)
+        screen.blit(carrier_turtle1, carrier_turtle1_skin_box)
         pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "carrier_turtle" else "#303030", carrier_turtle1_skin_box, 2)
-        screen.blit(player.sprite.girl_turtle1, girl_turtle1_skin_box)
+        screen.blit(girl_turtle1, girl_turtle1_skin_box)
         pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "girl_turtle" else "#303030", girl_turtle1_skin_box, 2)
 
     scaled_screen = pygame.transform.scale(screen, full_screen.get_size())
