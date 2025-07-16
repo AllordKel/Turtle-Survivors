@@ -12,11 +12,14 @@ clock = pygame.time.Clock()
 screen = pygame.Surface((800, 400))  # game screen
 full_screen = pygame.display.set_mode((0, 0), pygame.NOFRAME)
 
+try:
+    with open("saves\\player_data.json", "r") as f:
+        player_data = json.load(f)
+except FileNotFoundError:
+    player_data = {"leaderboard": [], "selected_skin": "green_turtle", "shells_currency": 0, "golden_turtle_purchased": False, "carrier_turtle_purchased": False, "girl_turtle_purchased": False}
 
 # event timers
-spawn_interval = 1000
 enemy_timer = pygame.USEREVENT + 1  # enemy spawn timer
-pygame.time.set_timer(enemy_timer, spawn_interval)
 
 # font
 text_font = pygame.font.SysFont(None, 30)
@@ -38,11 +41,9 @@ heart1 = pygame.transform.scale(heart1, (heart1.get_width() // 8, heart1.get_hei
 leaderboard = pygame.image.load("images\\leaderboard.png").convert_alpha()  # leaderboard image
 leaderboard = pygame.transform.scale(leaderboard, (leaderboard.get_width() // 1.5, 400))  # leaderboard.get_height() // 1.5
 
-enter_name_box = pygame.image.load("images\\enter_name.png").convert_alpha()  # enter name box image
-enter_name_box = pygame.transform.scale(enter_name_box, (enter_name_box.get_width() // 1.5, enter_name_box.get_height() // 1.5))  # leaderboard.get_height() // 1.5
-
-healthbar_text_surface = text_font.render("Health: ", False, "purple")  # healthbar text surface
-exit_text_helper = text_font.render("Press Enter to continue", False, "black")
+enter_name_frame = pygame.image.load("images\\enter_name.png").convert_alpha()  # enter name box image
+enter_name_frame = pygame.transform.scale(enter_name_frame, (enter_name_frame.get_width() // 1.5, enter_name_frame.get_height() // 1.5))  # leaderboard.get_height() // 1.5
+enter_name_frame_box = enter_name_frame.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2))
 
 turtle1 = pygame.image.load("images\\turtle1.png").convert_alpha()
 turtle1 = pygame.transform.scale(turtle1, (turtle1.get_width() // 7, turtle1.get_height() // 7))
@@ -126,18 +127,60 @@ eagle3 = pygame.transform.scale(eagle3, (eagle3.get_width() // 6, eagle3.get_hei
 
 endgame_box = pygame.Rect(150, 75, 500, 250)  # menu black box
 
-turtle1_skin_box = turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery - 60))
-golden_turtle1_skin_box = golden_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery - 60))
-carrier_turtle1_skin_box = carrier_turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery + 60))
-girl_turtle1_skin_box = girl_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery + 60))
+shell = pygame.image.load("images\\shell.png").convert_alpha()  # shell currency image
+shell_box = shell.get_rect(topright=(endgame_box.centerx, endgame_box.top + 10))
 
+# rendering text and setting boxes
+healthbar_text_surface = text_font.render("Health: ", False, "purple")  # healthbar text surface
+
+exit_text_helper = text_font.render("Press Enter to continue", False, "black")
+
+turtle1_skin_box = turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery - 70))
+golden_turtle1_skin_box = golden_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery - 70))
+carrier_turtle1_skin_box = carrier_turtle1.get_rect(center=(endgame_box.centerx - 125, endgame_box.centery + 50))
+girl_turtle1_skin_box = girl_turtle1.get_rect(center=(endgame_box.centerx + 125, endgame_box.centery + 50))
+
+want_purchase = False
+not_enough_shells = False
+carrier_turtle_price = 25  # carrier turtle skin price
+carrier_turtle_price_text = text_font.render(str(carrier_turtle_price), False, "#db9b3a")
+carrier_turtle_price_text_box = carrier_turtle_price_text.get_rect(midtop=(carrier_turtle1_skin_box.centerx - (shell.get_width() + 5) // 2, girl_turtle1_skin_box.bottom + 10))
+girl_turtle_price = 50  # girl turtle skin price
+girl_turtle_price_text = text_font.render(str(girl_turtle_price), False, "#db9b3a")
+girl_turtle_price_text_box = girl_turtle_price_text.get_rect(midtop=(girl_turtle1_skin_box.centerx - (shell.get_width() + 5) // 2, girl_turtle1_skin_box.bottom + 10))
+golden_turtle_price = 10  # gold turtle skin price
+gold_turtle_price_text = text_font.render(str(golden_turtle_price), False, "#db9b3a")
+gold_turtle_price_text_box = gold_turtle_price_text.get_rect(midtop=(golden_turtle1_skin_box.centerx - (shell.get_width() + 5) // 2, golden_turtle1_skin_box.bottom + 10))
+
+purchase_question_text1 = text_font.render("Do you want to", False, "#db9b3a")
+purchase_question_text_box1 = purchase_question_text1.get_rect(center=(400, 175))
+
+confirm_purchase_text = text_font.render("Yes", False, "#db9b3a")
+confirm_purchase_text_box = confirm_purchase_text.get_rect(center=(350, 220))
+
+reject_purchase_text = text_font.render("No", False, "#db9b3a")
+reject_purchase_text_box = reject_purchase_text.get_rect(center=(450, 220))
+
+not_enough_shells_text = text_font.render("Not enough shells", False, "#db9b3a")
+not_enough_shells_text_box = not_enough_shells_text.get_rect(center=(400, 200))
+
+ad_watch_text1 = text_font.render("You've been captured", False, "#db9b3a")
+ad_watch_text1_box = ad_watch_text1.get_rect(center=(400, 175))
+
+ad_watch_text2 = text_font.render("Watch the ad to get more     ?", False, "#db9b3a")
+ad_watch_text2_box = ad_watch_text2.get_rect(center=(400, 195))
+
+ad_text = text_font.render("Watching ad...", False, "black")
+ad_finish_button_text = text_font.render("Get reward", True, "white")
+
+reward_button_rect = pygame.Rect(300, 300, 200, 50)
 leaderboard_text_rect = pygame.Rect(300, 165, 200, 180)
 
 
 class turtle(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.selected_skin = load_selected_skin()
+        self.selected_skin = player_data["selected_skin"]
         if self.selected_skin == "green_turtle":
             self.turtle_animation_set = green_turtle_animation_set
             self.turtle_jump_animation_set = turtle1
@@ -259,13 +302,17 @@ def new_game():  # starting new game state
     global background_animation_x
     background_animation_x = 0
     global spawn_interval
-    spawn_interval = 1500
+    spawn_interval = 1000
     pygame.time.set_timer(enemy_timer, spawn_interval)
     global player_name
     player_name = ""
     game_music_channel.play(game_music, loops=-1)
     global old_score_display
     old_score_display = -1
+    global ad_watched
+    ad_watched = False
+    global score_saved
+    score_saved = False
 
 
 def scale_mouse(pos):
@@ -274,35 +321,24 @@ def scale_mouse(pos):
     return (pos[0] * vx / rx, pos[1] * vy / ry)
 
 
-def load_leaderboard():
-    try:
-        with open("saves\\leaderboard.json", "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return []
-
-
 def add_new_score(name, score):
-    leaderboard_data = load_leaderboard()
-    leaderboard_data.append({"name": name, "score": score})
-    leaderboard_data.sort(key=lambda x: x["score"], reverse=True)  # descent sorting
-    leaderboard_data = leaderboard_data[:6]  # leaving only top 6
-    with open("saves\\leaderboard.json", "w") as f:
-        json.dump(leaderboard_data, f, indent=4)
+    player_data["leaderboard"].append({"name": name, "score": score})
+    player_data["leaderboard"].sort(key=lambda x: x["score"], reverse=True)  # descent sorting
+    player_data["leaderboard"] = player_data["leaderboard"][:6]  # leaving only top 6
+    with open("saves\\player_data.json", "w") as f:
+        json.dump(player_data, f, indent=4)
 
 
 def save_selected_skin(skin):
-    with open("saves\\skins.json", "w") as f:
-        json.dump({"selected_skin": skin}, f)
+    player_data["selected_skin"] = skin
+    with open("saves\\player_data.json", "w") as f:
+        json.dump(player_data, f, indent=4)
 
 
-def load_selected_skin():
-    try:
-        with open("saves\\skins.json", "r") as f:
-            data = json.load(f)
-            return data.get("selected_skin", "green_turtle")
-    except FileNotFoundError:
-        return "green_turtle"
+def save_shells_currency(shells):
+    player_data["shells_currency"] = shells
+    with open("saves\\player_data.json", "w") as f:
+        json.dump(player_data, f, indent=4)
 
 
 def play_music():
@@ -325,16 +361,189 @@ game_state = "menu"
 play_music()
 
 while True:
-    events = pygame.event.get()  # saving all events
+    events = pygame.event.get()
     keys = pygame.key.get_pressed()  # saving all keyboard inputs
 
-    for event in events:  # for global events regardlesss of game state
+    for event in events:  # for inputss and events
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
 
-    if game_state == "game":
+        if game_state == "game":
+            if event.type == enemy_timer:  # adding enemies to the enemy list
+                enemies.add(mobs(choice(["rat", "eagle"])))
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:  # pause
+                    game_state = "menu"
+
+        elif game_state == "menu":
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if pygame.mouse.get_pressed()[0] and menu_continue_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)) and player.sprite.health != 0:  # continue
+                    game_state = "game"
+
+                elif pygame.mouse.get_pressed()[0] and newgame_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # start new game
+                    new_game()
+                    play_music()
+
+                elif pygame.mouse.get_pressed()[0] and menu_skins_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # skins button
+                    game_state = "skin_selection"
+
+                elif pygame.mouse.get_pressed()[0] and leaderboard_menu_text_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # leaderboard button
+                    score_saved = True
+                    game_state = "leaderboard"
+
+                elif pygame.mouse.get_pressed()[0] and exit_button_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # exit game
+                    pygame.quit()
+                    exit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE and player.sprite.health != 0:
+                    game_state = "game"
+
+        elif game_state == "leaderboard":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
+                    game_state = "menu"
+                    play_music()
+
+        elif game_state == "gameover":
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    game_state = "leaderboard"
+                elif event.key == pygame.K_BACKSPACE:
+                    player_name = player_name[:-1]
+                else:
+                    if len(player_name) < 10:
+                        player_name += event.unicode
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if not ad_watched and pygame.mouse.get_pressed()[0] and reject_purchase_text_box.inflate(5, 5).collidepoint(scale_mouse(event.pos)):
+                    ad_watched = True
+                    player_data["shells_currency"] += round(score)  # saving shells currency
+                    save_shells_currency(player_data["shells_currency"])
+                elif not ad_watched and pygame.mouse.get_pressed()[0] and confirm_purchase_text_box.inflate(5, 5).collidepoint(scale_mouse(event.pos)):
+                    ad_start_time = pygame.time.get_ticks()
+                    ad_finished = False
+                    ad_running = True
+                elif ad_running and ad_finished and reward_button_rect.collidepoint(scale_mouse(event.pos)):
+                    player.sprite.health = player.sprite.max_health
+                    player.sprite.damage_time = pygame.time.get_ticks()
+                    player.sprite.damage_cooldown = True
+                    game_state = "game"
+                    ad_watched = True
+                    ad_running = False
+
+        elif game_state == "skin_selection":
+            if event.type == pygame.KEYDOWN:
+                if not_enough_shells == True and (event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE):
+                    not_enough_shells = False
+
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
+                    game_state = "menu"
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # selecting green turtle skin
+                if not want_purchase and not not_enough_shells and pygame.mouse.get_pressed()[0] and turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
+                    player.sprite.selected_skin = "green_turtle"
+                    save_selected_skin(player.sprite.selected_skin)
+                    player.sprite.turtle_animation_set = green_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = turtle1
+                    player.sprite.turtle_hide_animation_set = green_turtle_hide_animation_set
+
+                # wanting to purchase golden turtle skin
+                elif not want_purchase and not not_enough_shells and pygame.mouse.get_pressed()[0] and golden_turtle1_skin_box.collidepoint(scale_mouse(event.pos)) and not player_data["golden_turtle_purchased"]:
+                    want_purchase = True
+                    purchase_skin = "Golden Turtle"
+
+                # selecting golden turtle skin
+                elif not want_purchase and not not_enough_shells and pygame.mouse.get_pressed()[0] and golden_turtle1_skin_box.collidepoint(scale_mouse(event.pos)) and player_data["golden_turtle_purchased"]:
+                    player.sprite.selected_skin = "golden_turtle"
+                    save_selected_skin(player.sprite.selected_skin)
+                    player.sprite.turtle_animation_set = golden_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = golden_turtle1
+                    player.sprite.turtle_hide_animation_set = golden_turtle_hide_animation_set
+
+                # wanting to purchase carrier turtle skin
+                elif not want_purchase and not not_enough_shells and pygame.mouse.get_pressed()[0] and carrier_turtle1_skin_box.collidepoint(scale_mouse(event.pos)) and not player_data["carrier_turtle_purchased"]:
+                    want_purchase = True
+                    purchase_skin = "Carrier Turtle"
+
+                # selecting carrier turtle skin
+                elif not want_purchase and not not_enough_shells and pygame.mouse.get_pressed()[0] and carrier_turtle1_skin_box.collidepoint(scale_mouse(event.pos)) and player_data["carrier_turtle_purchased"]:
+                    player.sprite.selected_skin = "carrier_turtle"
+                    save_selected_skin(player.sprite.selected_skin)
+                    player.sprite.turtle_animation_set = carrier_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = carrier_turtle1
+                    player.sprite.turtle_hide_animation_set = carrier_turtle_hide_animation_set
+
+                # wanting to purchase girl turtle skin
+                elif not want_purchase and not not_enough_shells and pygame.mouse.get_pressed()[0] and girl_turtle1_skin_box.collidepoint(scale_mouse(event.pos)) and not player_data["girl_turtle_purchased"]:
+                    want_purchase = True
+                    purchase_skin = "Girl Turtle"
+
+                # selecting girl turtle skin
+                elif not want_purchase and not not_enough_shells and pygame.mouse.get_pressed()[0] and girl_turtle1_skin_box.collidepoint(scale_mouse(event.pos)) and player_data["girl_turtle_purchased"]:
+                    player.sprite.selected_skin = "girl_turtle"
+                    save_selected_skin(player.sprite.selected_skin)
+                    player.sprite.turtle_animation_set = girl_turtle_animation_set
+                    player.sprite.turtle_jump_animation_set = girl_turtle1
+                    player.sprite.turtle_hide_animation_set = girl_turtle_hide_animation_set
+
+                # rejecting purchase
+                elif want_purchase and pygame.mouse.get_pressed()[0] and reject_purchase_text_box.inflate(5, 5).collidepoint(scale_mouse(event.pos)):
+                    want_purchase = False
+
+                # confirming purchase
+                elif want_purchase and pygame.mouse.get_pressed()[0] and confirm_purchase_text_box.inflate(5, 5).collidepoint(scale_mouse(event.pos)):
+                    if purchase_skin == "Golden Turtle" and player_data["shells_currency"] >= golden_turtle_price:
+                        player_data["golden_turtle_purchased"] = True
+                        player_data["selected_skin"] = "golden_turtle"
+                        player.sprite.selected_skin = "golden_turtle"
+                        player.sprite.turtle_animation_set = golden_turtle_animation_set
+                        player.sprite.turtle_jump_animation_set = golden_turtle1
+                        player.sprite.turtle_hide_animation_set = golden_turtle_hide_animation_set
+                        player_data["shells_currency"] -= carrier_turtle_price
+                        save_shells_currency(player_data["shells_currency"])
+                        shell_text_surface = text_font.render(f": {player_data["shells_currency"]}", False, "#db9b3a")
+                        want_purchase = False
+                    elif purchase_skin == "Golden Turtle" and player_data["shells_currency"] < golden_turtle_price:
+                        not_enough_shells = True
+                        want_purchase = False
+                    elif purchase_skin == "Carrier Turtle" and player_data["shells_currency"] >= carrier_turtle_price:
+                        player_data["carrier_turtle_purchased"] = True
+                        player_data["selected_skin"] = "carrier_turtle"
+                        player.sprite.selected_skin = "carrier_turtle"
+                        player.sprite.turtle_animation_set = carrier_turtle_animation_set
+                        player.sprite.turtle_jump_animation_set = carrier_turtle1
+                        player.sprite.turtle_hide_animation_set = carrier_turtle_hide_animation_set
+                        player_data["shells_currency"] -= carrier_turtle_price
+                        save_shells_currency(player_data["shells_currency"])
+                        shell_text_surface = text_font.render(f": {player_data["shells_currency"]}", False, "#db9b3a")
+                        want_purchase = False
+                    elif purchase_skin == "Carrier Turtle" and player_data["shells_currency"] < carrier_turtle_price:
+                        not_enough_shells = True
+                        want_purchase = False
+                    elif purchase_skin == "Girl Turtle" and player_data["shells_currency"] >= girl_turtle_price:
+                        player_data["girl_turtle_purchased"] = True
+                        player_data["selected_skin"] = "girl_turtle"
+                        player.sprite.selected_skin = "girl_turtle"
+                        player.sprite.turtle_animation_set = girl_turtle_animation_set
+                        player.sprite.turtle_jump_animation_set = girl_turtle1
+                        player.sprite.turtle_hide_animation_set = girl_turtle_hide_animation_set
+                        player_data["shells_currency"] -= carrier_turtle_price
+                        save_shells_currency(player_data["shells_currency"])
+                        shell_text_surface = text_font.render(f": {player_data["shells_currency"]}", False, "#db9b3a")
+                        want_purchase = False
+                    elif purchase_skin == "Girl Turtle" and player_data["shells_currency"] < girl_turtle_price:
+                        not_enough_shells = True
+                        want_purchase = False
+
+                # closing not enough shells message
+                elif not_enough_shells and pygame.mouse.get_pressed()[0] and enter_name_frame_box.collidepoint(scale_mouse(event.pos)):
+                    not_enough_shells = False
+
+    if game_state == "game":
         # speeding
         if score <= 100:
             speeding_rate = 1 + score / 100
@@ -351,15 +560,6 @@ while True:
         if new_spawn_interval != spawn_interval and spawn_interval > 650:
             spawn_interval = new_spawn_interval
             pygame.time.set_timer(enemy_timer, spawn_interval)
-
-        # buttons
-        for event in events:
-            if event.type == enemy_timer:  # adding enemies to the enemy list
-                enemies.add(mobs(choice(["rat", "eagle"])))
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:  # pause
-                    game_state = "menu"
 
         # drowing
         screen.blit(background1, (background_animation_x, 0))
@@ -384,36 +584,12 @@ while True:
 
         # gameover condition
         if player.sprite.health == 0:
-            score_saved = False
+            ad_running = False
             game_state = "gameover"
 
     elif game_state == "menu":
         # music
         play_music()
-
-        for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if pygame.mouse.get_pressed()[0] and menu_continue_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)) and player.sprite.health != 0:  # continue
-                    game_state = "game"
-
-                if pygame.mouse.get_pressed()[0] and newgame_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # start new game
-                    new_game()
-                    play_music()
-
-                if pygame.mouse.get_pressed()[0] and menu_skins_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # skins button
-                    game_state = "skin_selection"
-
-                if pygame.mouse.get_pressed()[0] and leaderboard_menu_text_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # leaderboard button
-                    score_saved = True
-                    game_state = "leaderboard"
-
-                if pygame.mouse.get_pressed()[0] and exit_button_box.inflate(10, 10).collidepoint(scale_mouse(event.pos)):  # exit game
-                    pygame.quit()
-                    exit()
-
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE and player.sprite.health != 0:
-                    game_state = "game"
 
         try:  # background
             screen.blit(background1, (background_animation_x, 0))
@@ -460,44 +636,51 @@ while True:
         screen.blit(exit_button, exit_button_box)
 
     elif game_state == "gameover":
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    game_state = "leaderboard"
-                elif event.key == pygame.K_BACKSPACE:
-                    player_name = player_name[:-1]
-                else:
-                    if len(player_name) < 10:
-                        player_name += event.unicode
-
         try:
             screen.blit(background1, (background_animation_x, 0))
             screen.blit(background1, (background1.get_width() + background_animation_x, 0))
         except NameError:
             screen.blit(background1, (0, 0))
 
-        screen.blit(enter_name_box, ((screen.get_width() - enter_name_box.get_width()) // 2, (screen.get_height() - enter_name_box.get_height()) // 2))
+        screen.blit(enter_name_frame, enter_name_frame_box)
 
-        end_game_score_text = text_font.render(f"Game Over with Score: {round(score)}", False, "#db9b3a")
-        end_game_score_text_box = end_game_score_text.get_rect(center=(400, 175))
-        screen.blit(end_game_score_text, end_game_score_text_box)
+        if not ad_watched:
+            screen.blit(ad_watch_text1, ad_watch_text1_box)
+            screen.blit(ad_watch_text2, ad_watch_text2_box)
+            screen.blit(heart1, (502, 180))
+            pygame.draw.rect(screen, "#55aa55", confirm_purchase_text_box.inflate(5, 5), 15, 10)
+            screen.blit(confirm_purchase_text, confirm_purchase_text_box)
+            pygame.draw.rect(screen, "#aa5555", reject_purchase_text_box.inflate(5, 5), 15, 10)
+            screen.blit(reject_purchase_text, reject_purchase_text_box)
 
-        title_surface = text_font.render("Enter your name", False, "#db9b3a")
-        title_rect = title_surface.get_rect(center=(400, 200))
-        screen.blit(title_surface, title_rect)
+        if ad_running:
 
-        input_box = pygame.Rect(0, 0, 100, 50)
-        input_box.center = (400, 230)
-        text_surface = text_font.render(player_name, False, "#db9b3a")
-        screen.blit(text_surface, (input_box.x + 10, input_box.y + 10))
+            # showing ad screen
+            screen.fill("#eeeeee")
+            pygame.draw.rect(screen, "#dddddd", pygame.Rect(150, 100, 500, 150))
+            screen.blit(ad_text, (screen.get_width() // 2 - ad_text.get_width() // 2, 130))
+
+            # after 5 seconds
+            if pygame.time.get_ticks() - ad_start_time > 5000:
+                ad_finished = True
+                pygame.draw.rect(screen, "#88cc88", reward_button_rect)
+                screen.blit(ad_finish_button_text, (reward_button_rect.centerx - ad_finish_button_text.get_width() // 2, reward_button_rect.centery - ad_finish_button_text.get_height() // 2))
+
+        elif ad_watched:
+            end_game_score_text = text_font.render(f"Game Over with Score: {round(score)}", False, "#db9b3a")
+            end_game_score_text_box = end_game_score_text.get_rect(center=(400, 175))
+            screen.blit(end_game_score_text, end_game_score_text_box)
+
+            title_surface = text_font.render("Enter your name", False, "#db9b3a")
+            title_rect = title_surface.get_rect(center=(400, 200))
+            screen.blit(title_surface, title_rect)
+
+            input_box = pygame.Rect(0, 0, 100, 50)
+            input_box.center = (400, 230)
+            text_surface = text_font.render(player_name, False, "#db9b3a")
+            screen.blit(text_surface, (input_box.x + 10, input_box.y + 10))
 
     elif game_state == "leaderboard":
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
-                    game_state = "menu"
-                    play_music()
-
         try:  # background
             screen.blit(background1, (background_animation_x, 0))
             screen.blit(background1, (background1.get_width() + background_animation_x, 0))
@@ -507,7 +690,7 @@ while True:
 
         screen.blit(leaderboard, ((screen.get_width() - leaderboard.get_width()) // 2, 0))  # leadderboard background
 
-        leaderboard_data = load_leaderboard()
+        leaderboard_data = player_data["leaderboard"]
 
         if not score_saved and len(player_name) > 0:  # saving score in leaderboard
             add_new_score(player_name, round(score))
@@ -518,40 +701,6 @@ while True:
             screen.blit(line_surface, (leaderboard_text_rect.x, leaderboard_text_rect.y + i * 30))
 
     elif game_state == "skin_selection":
-        for event in events:
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN or event.key == pygame.K_ESCAPE:
-                    game_state = "menu"
-
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if pygame.mouse.get_pressed()[0] and turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
-                    player.sprite.selected_skin = "green_turtle"
-                    save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = green_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = turtle1
-                    player.sprite.turtle_hide_animation_set = green_turtle_hide_animation_set
-
-                if pygame.mouse.get_pressed()[0] and golden_turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
-                    player.sprite.selected_skin = "golden_turtle"
-                    save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = golden_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = golden_turtle1
-                    player.sprite.turtle_hide_animation_set = golden_turtle_hide_animation_set
-
-                if pygame.mouse.get_pressed()[0] and carrier_turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
-                    player.sprite.selected_skin = "carrier_turtle"
-                    save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = carrier_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = carrier_turtle1
-                    player.sprite.turtle_hide_animation_set = carrier_turtle_hide_animation_set
-
-                if pygame.mouse.get_pressed()[0] and girl_turtle1_skin_box.collidepoint(scale_mouse(event.pos)):
-                    player.sprite.selected_skin = "girl_turtle"
-                    save_selected_skin(player.sprite.selected_skin)
-                    player.sprite.turtle_animation_set = girl_turtle_animation_set
-                    player.sprite.turtle_jump_animation_set = girl_turtle1
-                    player.sprite.turtle_hide_animation_set = girl_turtle_hide_animation_set
-
         try:
             screen.blit(background1, (background_animation_x, 0))
             screen.blit(background1, (background1.get_width() + background_animation_x, 0))
@@ -562,14 +711,47 @@ while True:
         pygame.draw.rect(screen, "#aaeebb", endgame_box, 2)
         screen.blit(exit_text_helper, exit_text_helper.get_rect(topright=(800, 0)))
 
-        screen.blit(turtle1, turtle1_skin_box)
-        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "green_turtle" else "#303030", turtle1_skin_box, 2)
-        screen.blit(golden_turtle1, golden_turtle1_skin_box)
-        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "golden_turtle" else "#303030", golden_turtle1_skin_box, 2)
-        screen.blit(carrier_turtle1, carrier_turtle1_skin_box)
-        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "carrier_turtle" else "#303030", carrier_turtle1_skin_box, 2)
-        screen.blit(girl_turtle1, girl_turtle1_skin_box)
-        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "girl_turtle" else "#303030", girl_turtle1_skin_box, 2)
+        screen.blit(player.sprite.turtle_animation_set[int(pygame.time.get_ticks() // 100 % len(player.sprite.turtle_animation_set))] if player.sprite.selected_skin == "green_turtle" else turtle1, turtle1_skin_box)
+        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "green_turtle" else "#303030", turtle1_skin_box.inflate(15, 15), 2)
+        screen.blit(player.sprite.turtle_animation_set[int(pygame.time.get_ticks() // 100 % len(player.sprite.turtle_animation_set))] if player.sprite.selected_skin == "golden_turtle" else golden_turtle1, golden_turtle1_skin_box)
+        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "golden_turtle" else "#303030", golden_turtle1_skin_box.inflate(15, 15), 2)
+        screen.blit(player.sprite.turtle_animation_set[int(pygame.time.get_ticks() // 100 % len(player.sprite.turtle_animation_set))] if player.sprite.selected_skin == "carrier_turtle" else carrier_turtle1, carrier_turtle1_skin_box)
+        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "carrier_turtle" else "#303030", carrier_turtle1_skin_box.inflate(15, 15), 2)
+        screen.blit(player.sprite.turtle_animation_set[int(pygame.time.get_ticks() // 100 % len(player.sprite.turtle_animation_set))] if player.sprite.selected_skin == "girl_turtle" else girl_turtle1, girl_turtle1_skin_box)
+        pygame.draw.rect(screen, "#aaeebb" if player.sprite.selected_skin == "girl_turtle" else "#303030", girl_turtle1_skin_box.inflate(15, 15), 2)
+
+        shell_text_surface = text_font.render(f": {player_data["shells_currency"]}", False, "#db9b3a")
+        shell_text_surface_box = shell_text_surface.get_rect(midleft=(shell_box.right + 5, shell_box.centery))
+        screen.blit(shell, shell_box)
+        screen.blit(shell_text_surface, shell_text_surface_box)
+
+        if not player_data["carrier_turtle_purchased"]:
+            screen.blit(carrier_turtle_price_text, carrier_turtle_price_text_box)
+            screen.blit(shell, (carrier_turtle_price_text_box.right + 5, carrier_turtle_price_text_box.top + 2))
+        if not player_data["girl_turtle_purchased"]:
+            screen.blit(girl_turtle_price_text, girl_turtle_price_text_box)
+            screen.blit(shell, (girl_turtle_price_text_box.right + 5, girl_turtle_price_text_box.top + 2))
+        if not player_data["golden_turtle_purchased"]:
+            screen.blit(gold_turtle_price_text, gold_turtle_price_text_box)
+            screen.blit(shell, (gold_turtle_price_text_box.right + 5, gold_turtle_price_text_box.top + 2))
+
+        if want_purchase:
+            screen.blit(enter_name_frame, enter_name_frame_box)
+
+            purchase_question_text2 = text_font.render(f"Purchase {purchase_skin}?", False, "#db9b3a")
+            purchase_question_text_box2 = purchase_question_text2.get_rect(center=(400, 195))
+            screen.blit(purchase_question_text1, purchase_question_text_box1)
+            screen.blit(purchase_question_text2, purchase_question_text_box2)
+
+            pygame.draw.rect(screen, "#55aa55", confirm_purchase_text_box.inflate(5, 5), 15, 10)
+            screen.blit(confirm_purchase_text, confirm_purchase_text_box)
+
+            pygame.draw.rect(screen, "#aa5555", reject_purchase_text_box.inflate(5, 5), 15, 10)
+            screen.blit(reject_purchase_text, reject_purchase_text_box)
+
+        if not_enough_shells:
+            screen.blit(enter_name_frame, enter_name_frame_box)
+            screen.blit(not_enough_shells_text, not_enough_shells_text_box)
 
     scaled_screen = pygame.transform.scale(screen, full_screen.get_size())
     full_screen.blit(scaled_screen, (0, 0))
