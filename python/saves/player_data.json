@@ -1,8 +1,33 @@
 {
-    "leaderboard": [],
-    "selected_skin": "green_turtle",
-    "shells_currency": 0,
-    "carrier_turtle_purchased": false,
-    "golden_turtle_purchased": false,
-    "girl_turtle_purchased": false
+    "leaderboard": [
+        {
+            "name": "Allord",
+            "score": 570
+        },
+        {
+            "name": "Allord",
+            "score": 419
+        },
+        {
+            "name": "Allord",
+            "score": 368
+        },
+        {
+            "name": "Allord",
+            "score": 355
+        },
+        {
+            "name": "Allord",
+            "score": 319
+        },
+        {
+            "name": "Allord",
+            "score": 316
+        }
+    ],
+    "selected_skin": "carrier_turtle",
+    "shells_currency": 1687,
+    "carrier_turtle_purchased": true,
+    "golden_turtle_purchased": true,
+    "girl_turtle_purchased": true
 }
