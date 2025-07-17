@@ -418,6 +418,8 @@ while True:
         elif game_state == "gameover":
             if event.type == pygame.KEYDOWN:
                 if ad_watched and not ad_running and event.key == pygame.K_RETURN:
+                    player_data["shells_currency"] += round(score)  # saving shells currency
+                    save_shells_currency(player_data["shells_currency"])
                     game_state = "leaderboard"
                 elif ad_watched and not ad_running and event.key == pygame.K_BACKSPACE:
                     player_name = player_name[:-1]
@@ -428,8 +430,6 @@ while True:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if not ad_watched and pygame.mouse.get_pressed()[0] and reject_purchase_text_box.inflate(5, 5).collidepoint(event.pos):
                     ad_watched = True
-                    player_data["shells_currency"] += round(score)  # saving shells currency
-                    save_shells_currency(player_data["shells_currency"])
                 elif not ad_watched and pygame.mouse.get_pressed()[0] and confirm_purchase_text_box.inflate(5, 5).collidepoint(event.pos):
                     ad_start_time = pygame.time.get_ticks()
                     game_music_channel.pause()
